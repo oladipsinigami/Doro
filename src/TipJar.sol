@@ -92,10 +92,12 @@ contract TipJar is EIP712, ReentrancyGuard {
         if (handleHash == bytes32(0)) revert InvalidHandleHash();
 
         tipId = nextTipId++;
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint40 expiresAt = uint40(block.timestamp + TIP_DURATION);
 
         tips[tipId] = Tip({
             sender: msg.sender,
+            // forge-lint: disable-next-line(unsafe-typecast)
             createdAt: uint40(block.timestamp),
             expiresAt: expiresAt,
             claimed: false,
@@ -123,12 +125,15 @@ contract TipJar is EIP712, ReentrancyGuard {
     ) external nonReentrant {
         if (recipient == address(0)) revert ZeroAddress();
         if (msg.sender != recipient) revert InvalidRecipient();
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp > deadline) revert DeadlineExpired();
+        // forge-lint: disable-next-line(block-timestamp)
         if (deadline > block.timestamp + MAX_VOUCHER_TTL) revert DeadlineTooFar();
 
         Tip storage tip = tips[tipId];
         if (tip.createdAt == 0) revert TipNotFound();
         if (tip.claimed) revert TipAlreadyClaimed();
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp > tip.expiresAt) revert TipExpired();
 
         bytes32 structHash = keccak256(
@@ -142,6 +147,7 @@ contract TipJar is EIP712, ReentrancyGuard {
         tip.claimedBy = recipient;
         uint256 amount = tip.amount;
 
+        // forge-lint: disable-next-line(reentrancy-events)
         emit TipClaimed(tipId, recipient, amount);
 
         (bool success, ) = recipient.call{value: amount}("");
@@ -157,6 +163,7 @@ contract TipJar is EIP712, ReentrancyGuard {
         if (tip.createdAt == 0) revert TipNotFound();
         if (tip.claimed) revert TipAlreadyClaimed();
         if (msg.sender != tip.sender) revert Unauthorized();
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp <= tip.expiresAt) revert TipNotExpired();
 
         tip.claimed = true;

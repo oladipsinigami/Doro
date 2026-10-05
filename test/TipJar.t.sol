@@ -207,7 +207,7 @@ contract TipJarTest is Test {
         vm.prank(alice);
         uint256 tipId = tipJar.createTip{value: 1 ether}(bobHandleHash);
 
-        uint256 deadline = block.timestamp + 5 minutes;
+        uint256 deadline = vm.getBlockTimestamp() + 5 minutes;
         bytes memory sig = _signVoucher(signerPrivateKey, tipId, bob, deadline);
 
         // Warp past deadline
@@ -249,9 +249,10 @@ contract TipJarTest is Test {
         uint256 tipId = tipJar.createTip{value: 1 ether}(bobHandleHash);
 
         // Warp past tip duration (7 days)
-        vm.warp(block.timestamp + 7 days + 1 seconds);
+        uint256 currentTimestamp = vm.getBlockTimestamp();
+        vm.warp(currentTimestamp + 7 days + 1 seconds);
 
-        uint256 deadline = block.timestamp + 5 minutes;
+        uint256 deadline = vm.getBlockTimestamp() + 5 minutes;
         bytes memory sig = _signVoucher(signerPrivateKey, tipId, bob, deadline);
 
         vm.prank(bob);

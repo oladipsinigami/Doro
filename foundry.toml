@@ -5,7 +5,6 @@ libs = ["lib"]
 test = "test"
 script = "script"
 network = "monad"
-eth_rpc_url = "https://testnet-rpc.monad.xyz"
 chain_id = 10143
 solc_version = "0.8.28"
 
@@ -13,3 +12,6 @@ remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
     "forge-std/=lib/forge-std/src/"
 ]
+
+[rpc_endpoints]
+monad_testnet = "https://testnet-rpc.monad.xyz"
