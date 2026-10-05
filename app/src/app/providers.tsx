@@ -5,7 +5,11 @@ import { PrivyProvider } from "@privy-io/react-auth";
 import { monadTestnet } from "@/lib/chain";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cm2sampleprivyappid";
+  // Privy requires an app ID of exactly 25 characters
+  const appId =
+    process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.NEXT_PUBLIC_PRIVY_APP_ID.length === 25
+      ? process.env.NEXT_PUBLIC_PRIVY_APP_ID
+      : "cl00000000000000000000000";
 
   return (
     <PrivyProvider

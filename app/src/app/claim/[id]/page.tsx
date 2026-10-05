@@ -21,9 +21,12 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
   const [claimSuccessTx, setClaimSuccessTx] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<bigint | null>(null);
 
-  const twitterAccount = user?.linkedAccounts?.find((a) => a.type === "twitter") as any;
-  const embeddedWallet = user?.linkedAccounts?.find(
-    (a) => a.type === "wallet" && a.walletClientType === "privy"
+  const twitterAccount = (user?.linkedAccounts as any[])?.find(
+    (a: any) => a.type === "twitter_oauth" || a.type === "twitter"
+  ) as any;
+  const twitterUsername = user?.twitter?.username || twitterAccount?.username;
+  const embeddedWallet = (user?.linkedAccounts as any[])?.find(
+    (a: any) => a.type === "wallet" && a.walletClientType === "privy"
   ) as any;
 
   // Load Tip Data from Monad Testnet
@@ -73,7 +76,7 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
       return;
     }
 
-    if (!twitterAccount?.username) {
+    if (!twitterUsername) {
       setClaimError("Your Privy login does not have an X (Twitter) account linked.");
       return;
     }
@@ -238,7 +241,7 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-500">Logged-in X Handle:</span>
                   <span className="font-bold text-monad-cyan">
-                    @{twitterAccount?.username || "Not linked"}
+                    @{twitterUsername || "Not linked"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">

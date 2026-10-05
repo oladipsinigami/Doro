@@ -8,7 +8,10 @@ import { hashHandle, signTipClaimVoucher } from "@/lib/signer";
 const privyAppId = process.env.PRIVY_APP_ID || "";
 const privyAppSecret = process.env.PRIVY_APP_SECRET || "";
 
-const privy = new PrivyClient(privyAppId, privyAppSecret);
+const privy = new PrivyClient({
+  appId: privyAppId,
+  appSecret: privyAppSecret,
+});
 
 const publicClient = createPublicClient({
   chain: monadTestnet,
@@ -31,7 +34,7 @@ export async function POST(req: NextRequest) {
     // Step 2: Verify Access Token with Privy
     let verifiedClaims;
     try {
-      verifiedClaims = await privy.verifyAuthToken(accessToken);
+      verifiedClaims = await privy.utils().auth().verifyAuthToken(accessToken);
     } catch (err: any) {
       return NextResponse.json(
         { error: "UNAUTHORIZED", message: "Invalid or expired access token." },
@@ -39,19 +42,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userId = verifiedClaims.userId;
+    const userId = verifiedClaims.user_id;
 
     // Step 3: Load User Profile via identity token (with fallback to user lookup by DID)
-    let user;
+    let user: any;
     if (identityToken) {
       try {
         user = await privy.users().get({ id_token: identityToken });
       } catch (e) {
-        // Fallback to DID lookup
-        user = await privy.getUser(userId);
+        // Fallback: lookup user via Privy REST API
+        if (privyAppId && privyAppSecret) {
+          const authHeader = `Basic ${Buffer.from(`${privyAppId}:${privyAppSecret}`).toString("base64")}`;
+          const res = await fetch(`https://api.privy.io/v1/users/${userId}`, {
+            headers: {
+              Authorization: authHeader,
+              "privy-app-id": privyAppId,
+            },
+          });
+          if (res.ok) {
+            user = await res.json();
+          }
+        }
       }
-    } else {
-      user = await privy.getUser(userId);
+    } else if (privyAppId && privyAppSecret) {
+      const authHeader = `Basic ${Buffer.from(`${privyAppId}:${privyAppSecret}`).toString("base64")}`;
+      const res = await fetch(`https://api.privy.io/v1/users/${userId}`, {
+        headers: {
+          Authorization: authHeader,
+          "privy-app-id": privyAppId,
+        },
+      });
+      if (res.ok) {
+        user = await res.json();
+      }
     }
 
     if (!user) {
@@ -61,8 +84,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const linkedAccounts = user.linked_accounts || user.linkedAccounts || [];
+
     // Step 4: Extract linked X (Twitter) account
-    const twitterAccount = user.linked_accounts.find(
+    const twitterAccount = linkedAccounts.find(
       (acc: any) => acc.type === "twitter"
     ) as any;
 
@@ -79,8 +104,10 @@ export async function POST(req: NextRequest) {
     const twitterUsername = twitterAccount.username;
 
     // Step 5: Extract Privy Embedded Ethereum Wallet
-    const embeddedWallet = user.linked_accounts.find(
-      (acc: any) => acc.type === "wallet" && acc.wallet_client_type === "privy"
+    const embeddedWallet = linkedAccounts.find(
+      (acc: any) =>
+        acc.type === "wallet" &&
+        (acc.wallet_client_type === "privy" || acc.walletClientType === "privy")
     ) as any;
 
     if (!embeddedWallet || !embeddedWallet.address) {
@@ -111,7 +138,7 @@ export async function POST(req: NextRequest) {
       claimedBy: `0x${string}`;
     };
 
-    if (tipData.createdAt === 0) {
+    if (Number(tipData.createdAt) === 0) {
       return NextResponse.json(
         { error: "TIP_NOT_FOUND", message: `Tip #${tipId} does not exist.` },
         { status: 404 }
