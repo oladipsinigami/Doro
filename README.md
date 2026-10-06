@@ -13,7 +13,10 @@ Built for the **Monad Metropolis Hackathon (October 2026)**.
 * **Chain**: Monad Testnet
 * **Chain ID**: `10143`
 * **RPC Endpoint**: `https://testnet-rpc.monad.xyz`
-* **Explorers**: [Monadscan](https://testnet.monadscan.com) • [MonadVision](https://testnet.monadvision.com)
+* **Contract Address**: [`0xa7a9ACAc332C398B61f7459215Fd4f5522686b88`](https://testnet.monadscan.com/address/0xa7a9ACAc332C398B61f7459215Fd4f5522686b88)
+* **Deployment Tx**: [`0xfd680968fd2c91f92f41a13515e2fb3cd61dea7ad15d571faf0d9588b3f303f6`](https://testnet.monadscan.com/tx/0xfd680968fd2c91f92f41a13515e2fb3cd61dea7ad15d571faf0d9588b3f303f6)
+* **Deployer / Owner**: `0xdB99D8C6b401cF97eaE6c835345938edF5299d25`
+* **Explorers**: [Monadscan](https://testnet.monadscan.com/address/0xa7a9ACAc332C398B61f7459215Fd4f5522686b88) • [MonadVision](https://testnet.monadvision.com/address/0xa7a9ACAc332C398B61f7459215Fd4f5522686b88)
 * **Faucet**: [https://faucet.monad.xyz](https://faucet.monad.xyz)
 * **Contract Source**: [`src/TipJar.sol`](./src/TipJar.sol)
 

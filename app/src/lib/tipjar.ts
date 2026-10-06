@@ -1,7 +1,7 @@
 import { monadTestnet } from "./chain";
 
 export const TIPJAR_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
-  "0x0000000000000000000000000000000000000000") as `0x${string}`;
+  "0xa7a9ACAc332C398B61f7459215Fd4f5522686b88") as `0x${string}`;
 
 export const TIPJAR_ABI = [
   {
