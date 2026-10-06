@@ -8,7 +8,19 @@ Built for the **Monad Metropolis Hackathon (October 2026)**.
 
 ---
 
+> [!NOTE]
+> ### 🔄 Rebrand Evolution: TipJar &rarr; Doro
+> This project was initially prototyped and developed under the working title **TipJar**.
+>
+> During development for the **Monad Metropolis Hackathon**, the project was officially rebranded to **Doro** (from the ancient Greek word **δῶρο**, meaning *gift*). This shift elevates the concept from transactional "tipping" to personal, viral **"social gifting"** (e.g. birthday gifts, milestone gifts, and community rewards) on Monad.
+>
+> The verified smart contract deployed on Monad Testnet retains the `TipJar` contract identifier for on-chain backwards compatibility and audit trail continuity.
+
+---
+
 ## 1. Verified Testnet Deployments & Network Details
+
+* **Project**: Doro (Native MON Gifting)
 
 * **Chain**: Monad Testnet
 * **Chain ID**: `10143`
@@ -129,13 +141,13 @@ npm run dev
 ## 5. End-to-End Demo Runbook
 
 1. **Step 1 — Fund Sender Wallet**: Ensure your sender wallet has at least 0.05 MON from `https://faucet.monad.xyz`.
-2. **Step 2 — Lock Tip**: Navigate to `http://localhost:3000/`, enter `@metropolis_tester`, enter `0.02 MON`, and click **Send Tip**. Confirm transaction on Monad Testnet.
-3. **Step 3 — Successful Claim**:
-   - Open an Incognito window and visit the shareable claim link (`http://localhost:3000/claim/0`).
+2. **Step 2 — Lock Gift**: Navigate to `http://localhost:3000/`, enter `@metropolis_tester`, enter `0.02 MON`, and click **Send Gift**. Confirm transaction on Monad Testnet.
+3. **Step 3 — Successful Unwrap & Claim**:
+   - Open an Incognito window and visit the shareable gift link (`http://localhost:3000/claim/0`).
    - Click **Login with X** and authenticate as `@metropolis_tester`.
    - Privy generates an embedded wallet.
-   - Click **Claim 0.02 MON** to sign and broadcast the claim on-chain.
+   - Click **Unwrap & Claim 0.02 MON** to sign and broadcast the claim on-chain.
 4. **Step 4 — Negative Test (Unauthorized Claim Rejection)**:
    - Open a second Incognito window and visit `http://localhost:3000/claim/0`.
    - Log in with a different X account (`@other_user`).
-   - The UI immediately displays: `Error 403: Authenticated X account does not match tip recipient`. The claim is rejected.
+   - The UI immediately displays: `Error 403: Authenticated X account does not match gift recipient`. The claim is rejected.
