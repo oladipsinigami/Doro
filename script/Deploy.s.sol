@@ -6,10 +6,19 @@ import {TipJar} from "../src/TipJar.sol";
 
 contract DeployTipJar is Script {
     function run() external returns (address tipJarAddress) {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        address claimSigner = vm.envAddress("CLAIM_SIGNER_ADDRESS");
+        uint256 deployerPrivateKey = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        address claimSigner = vm.envOr("CLAIM_SIGNER_ADDRESS", address(0));
 
-        vm.startBroadcast(deployerPrivateKey);
+        if (claimSigner == address(0)) {
+            // Fallback to keystore deployer address
+            claimSigner = 0xdB99D8C6b401cF97eaE6c835345938edF5299d25;
+        }
+
+        if (deployerPrivateKey != 0) {
+            vm.startBroadcast(deployerPrivateKey);
+        } else {
+            vm.startBroadcast();
+        }
 
         TipJar tipJar = new TipJar(claimSigner);
         tipJarAddress = address(tipJar);
