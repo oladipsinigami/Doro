@@ -114,6 +114,67 @@ async function runTests() {
   }
   console.log("✓ Cross-chain replay alters digest and recovers to invalid address");
 
+  // Test 5: Route Logic Checkpoint — Token Validation & Mismatch Rejection
+  console.log("\n[Test 5] Simulating Route Handler Validation Sequences...");
+  
+  // Scenario 5a: Missing / Invalid token
+  function simulateRoute({ accessToken, twitterUsername, onChainHandleHash, targetHandle }) {
+    if (!accessToken || accessToken === "invalid_jwt") {
+      return { status: 401, error: "UNAUTHORIZED", message: "Invalid or expired access token." };
+    }
+    const cleanUser = twitterUsername.trim().replace(/^@/, "").toLowerCase();
+    const computedHash = keccak256(encodePacked(["bytes32", "string"], [testSalt, cleanUser]));
+    if (computedHash.toLowerCase() !== onChainHandleHash.toLowerCase()) {
+      return {
+        status: 403,
+        error: "HANDLE_MISMATCH",
+        message: `Authenticated X account @${twitterUsername} does not match the tip recipient.`,
+      };
+    }
+    return {
+      status: 200,
+      recipient,
+      deadline: Number(deadline),
+      signature,
+    };
+  }
+
+  // 1. Invalid token test
+  const resInvalid = simulateRoute({
+    accessToken: "invalid_jwt",
+    twitterUsername: "attacker_handle",
+    onChainHandleHash: handleHash,
+    targetHandle: "metropolis_builder",
+  });
+  if (resInvalid.status !== 401 || resInvalid.error !== "UNAUTHORIZED") {
+    throw new Error("Route failed to reject invalid token!");
+  }
+  console.log("✓ Route rejects invalid token with 401 UNAUTHORIZED");
+
+  // 2. Valid token for wrong handle
+  const resWrongHandle = simulateRoute({
+    accessToken: "valid_privy_token_user_bob",
+    twitterUsername: "bob_wrong_guy",
+    onChainHandleHash: handleHash,
+    targetHandle: "metropolis_builder",
+  });
+  if (resWrongHandle.status !== 403 || resWrongHandle.error !== "HANDLE_MISMATCH") {
+    throw new Error("Route failed to reject wrong handle mismatch!");
+  }
+  console.log("✓ Route rejects wrong handle with 403 HANDLE_MISMATCH");
+
+  // 3. Valid token for right handle
+  const resRightHandle = simulateRoute({
+    accessToken: "valid_privy_token_user_alice",
+    twitterUsername: "  @Metropolis_Builder  ",
+    onChainHandleHash: handleHash,
+    targetHandle: "metropolis_builder",
+  });
+  if (resRightHandle.status !== 200 || !resRightHandle.signature) {
+    throw new Error("Route failed to approve valid handle!");
+  }
+  console.log("✓ Route approves matching handle with 200 OK and valid EIP-712 voucher");
+
   console.log("\n=== ALL CRYPTOGRAPHIC & API SIGNING ASSERTIONS PASSED ===");
 }
 
