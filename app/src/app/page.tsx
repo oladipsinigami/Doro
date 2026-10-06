@@ -2,7 +2,14 @@
 
 import React, { useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { parseEther, createWalletClient, custom } from "viem";
+import {
+  parseEther,
+  createWalletClient,
+  createPublicClient,
+  custom,
+  http,
+  parseEventLogs,
+} from "viem";
 import { monadTestnet } from "@/lib/chain";
 import { TIPJAR_ABI, TIPJAR_ADDRESS } from "@/lib/tipjar";
 
@@ -85,7 +92,27 @@ export default function SendTipPage() {
 
       setStatusMessage("Transaction submitted! Waiting for Monad confirmation...");
 
+      let tipId: number | undefined;
+      try {
+        const publicClient = createPublicClient({
+          chain: monadTestnet,
+          transport: http("https://testnet-rpc.monad.xyz"),
+        });
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        const logs = parseEventLogs({
+          abi: TIPJAR_ABI,
+          logs: receipt.logs,
+          eventName: "TipCreated",
+        });
+        if (logs.length > 0 && logs[0].args?.tipId !== undefined) {
+          tipId = Number(logs[0].args.tipId);
+        }
+      } catch (receiptErr) {
+        console.warn("Could not parse receipt logs for tipId:", receiptErr);
+      }
+
       setCreatedTip({
+        tipId,
         txHash: hash,
         handle: cleanHandle,
         amount,
@@ -128,6 +155,11 @@ export default function SendTipPage() {
             <p className="text-sm text-zinc-400">
               You locked <span className="font-bold text-white">{createdTip.amount} MON</span> for{" "}
               <span className="font-bold text-monad-cyan">@{createdTip.handle}</span>.
+              {createdTip.tipId !== undefined && (
+                <span className="block text-xs font-mono text-monad-purple mt-1">
+                  Assigned Tip ID: #{createdTip.tipId}
+                </span>
+              )}
             </p>
 
             <div className="w-full p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-left text-xs font-mono break-all text-zinc-300">
@@ -154,15 +186,16 @@ export default function SendTipPage() {
                   readOnly
                   value={
                     typeof window !== "undefined"
-                      ? `${window.location.origin}/claim/0`
-                      : "/claim/0"
+                      ? `${window.location.origin}/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`
+                      : `/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`
                   }
                   className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-300 font-mono"
                 />
                 <button
                   onClick={() => {
                     if (typeof window !== "undefined") {
-                      navigator.clipboard.writeText(`${window.location.origin}/claim/0`);
+                      const link = `${window.location.origin}/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`;
+                      navigator.clipboard.writeText(link);
                       alert("Claim link copied to clipboard!");
                     }
                   }}
