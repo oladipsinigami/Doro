@@ -1,8 +1,8 @@
-# TipJar — Monad Metropolis Hackathon 🏺⚡
+# 🎁 Doro (δῶρο) — Native MON Gifting for X on Monad ⚡
 
-**TipJar** is a trust-minimized social escrow protocol for Monad Testnet that lets anyone tip native MON to any X (Twitter) handle. 
+**Doro** (*Greek for "gift"*) is a trust-minimized social gifting protocol for Monad Testnet that lets anyone gift native MON to any X (Twitter) handle. 
 
-Recipients authenticate through [Privy](https://privy.io) with their X account, derive an embedded Ethereum wallet, receive an EIP-712 server-signed voucher proving their handle ownership, and claim their funds on-chain. If left unclaimed past 7 days, the sender can execute a full refund.
+Recipients authenticate through [Privy](https://privy.io) with their X account, derive an embedded Ethereum wallet, receive an EIP-712 server-signed voucher proving their handle ownership, and unwrap their gift on-chain. If left unclaimed past 7 days, the sender can execute a full refund.
 
 Built for the **Monad Metropolis Hackathon (October 2026)**.
 

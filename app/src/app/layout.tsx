@@ -4,9 +4,9 @@ import Providers from "./providers";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "TipJar — Native MON Escrow for X on Monad Testnet",
+  title: "Doro — Native MON Gifting for X on Monad Testnet",
   description:
-    "Send native MON tips to any X (Twitter) handle. Claimable on Monad Testnet via Privy embedded wallets and EIP-712 vouchers.",
+    "Gift native MON to any X (Twitter) handle. Claimable and unwrappable on Monad Testnet via Privy embedded wallets and EIP-712 vouchers.",
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="w-full border-t border-monad-border/40 py-6 text-center text-xs text-zinc-500">
-            Built for Monad Metropolis Hackathon 2026 • Monad Testnet (Chain ID 10143)
+            Doro (δῶρο) • Built for Monad Metropolis Hackathon 2026 • Monad Testnet (Chain ID 10143)
           </footer>
         </Providers>
       </body>

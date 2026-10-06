@@ -114,7 +114,7 @@ export default function MyTipsPage() {
       <div className="text-center py-20">
         <h2 className="text-2xl font-bold text-white mb-3">Connect Your Wallet</h2>
         <p className="text-zinc-400 text-sm mb-6">
-          Connect your wallet to view tips you have sent and execute refunds on expired tips.
+          Connect your wallet to view gifts you have sent and execute refunds on expired gifts.
         </p>
         <button
           onClick={login}
@@ -132,7 +132,7 @@ export default function MyTipsPage() {
     <div className="w-full max-w-4xl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">My Sent Tips</h1>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">My Sent Gifts</h1>
           <p className="text-zinc-400 text-xs sm:text-sm mt-1">
             Connected: <span className="font-mono text-zinc-300">{activeWallet?.address}</span>
           </p>
@@ -162,13 +162,13 @@ export default function MyTipsPage() {
       {loading ? (
         <div className="text-center py-16">
           <div className="w-8 h-8 border-3 border-monad-purple/30 border-t-monad-purple rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-zinc-400 text-xs">Scanning Monad Testnet for your tips...</p>
+          <p className="text-zinc-400 text-xs">Scanning Monad Testnet for your gifts...</p>
         </div>
       ) : tips.length === 0 ? (
         <div className="text-center py-16 bg-monad-card/60 rounded-2xl border border-monad-border p-8">
-          <p className="text-zinc-400 text-sm mb-2">You haven&apos;t sent any tips yet.</p>
+          <p className="text-zinc-400 text-sm mb-2">You haven&apos;t sent any gifts yet.</p>
           <a href="/" className="text-monad-purple font-semibold text-xs hover:underline">
-            Send your first tip &rarr;
+            Send your first gift &rarr;
           </a>
         </div>
       ) : (
@@ -177,7 +177,7 @@ export default function MyTipsPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-zinc-900/80 border-b border-monad-border text-zinc-400 uppercase tracking-wider font-semibold">
                 <tr>
-                  <th className="py-3 px-4">Tip ID</th>
+                  <th className="py-3 px-4">Gift ID</th>
                   <th className="py-3 px-4">Amount</th>
                   <th className="py-3 px-4">Expires</th>
                   <th className="py-3 px-4">Status</th>

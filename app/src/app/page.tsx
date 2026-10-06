@@ -42,7 +42,7 @@ export default function SendTipPage() {
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount < 0.01) {
-      setError("Minimum tip amount is 0.01 MON.");
+      setError("Minimum gift amount is 0.01 MON.");
       return;
     }
 
@@ -122,7 +122,7 @@ export default function SendTipPage() {
       setLoading(false);
       setStatusMessage("");
     } catch (err: any) {
-      console.error("Tip creation failed:", err);
+      console.error("Gift creation failed:", err);
       setError(err?.shortMessage || err?.message || "Transaction failed.");
       setLoading(false);
       setStatusMessage("");
@@ -134,14 +134,14 @@ export default function SendTipPage() {
       {/* Hero Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-monad-purple/10 border border-monad-purple/30 text-xs font-semibold text-monad-purple mb-4">
-          ⚡ Native Monad Escrow
+          🎁 Native Monad Gift Escrow
         </div>
         <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-3">
-          Tip Any X Account
+          Gift Any X Account
         </h1>
         <p className="text-zinc-400 text-sm sm:text-base max-w-md mx-auto">
-          Lock native MON for any Twitter handle. The recipient logs in with X via Privy, derives an
-          embedded wallet, and claims on-chain.
+          Send native MON gifts to any Twitter handle. The recipient logs in with X via Privy, derives an
+          embedded wallet, and unwraps their gift on-chain.
         </p>
       </div>
 
@@ -150,15 +150,15 @@ export default function SendTipPage() {
         {createdTip ? (
           <div className="flex flex-col items-center text-center space-y-4 py-2">
             <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-2xl">
-              🎉
+              🎁
             </div>
-            <h3 className="text-xl font-bold text-white">Tip Created Successfully!</h3>
+            <h3 className="text-xl font-bold text-white">Gift Sent Successfully!</h3>
             <p className="text-sm text-zinc-400">
-              You locked <span className="font-bold text-white">{createdTip.amount} MON</span> for{" "}
+              You locked <span className="font-bold text-white">{createdTip.amount} MON</span> as a gift for{" "}
               <span className="font-bold text-monad-cyan">@{createdTip.handle}</span>.
               {createdTip.tipId !== undefined && (
                 <span className="block text-xs font-mono text-monad-purple mt-1">
-                  Assigned Tip ID: #{createdTip.tipId}
+                  Assigned Gift ID: #{createdTip.tipId}
                 </span>
               )}
             </p>
@@ -179,7 +179,7 @@ export default function SendTipPage() {
 
             <div className="w-full p-4 rounded-xl bg-monad-purple/10 border border-monad-purple/30 text-left space-y-3">
               <span className="text-xs font-bold text-monad-purple block">
-                Shareable Claim Link:
+                Shareable Gift Link:
               </span>
               <div className="flex items-center gap-2">
                 <input
@@ -214,10 +214,10 @@ export default function SendTipPage() {
               {/* Share on X (Twitter) intent button */}
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                  `Hey @${createdTip.handle}, I just sent you ${createdTip.amount} MON on Monad Testnet! 🏺⚡\n\nClaim your native MON via @TipJar here:\n${
+                  `Hey @${createdTip.handle}, I just sent you a gift of ${createdTip.amount} MON on Monad Testnet! 🎁⚡\n\nUnwrap & claim your gift via @Doro here:\n${
                     typeof window !== "undefined"
                       ? `${window.location.origin}/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`
-                      : `https://tipjar.monad.xyz/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`
+                      : `https://doro.monad.xyz/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`
                   }\n\n#Monad #Metropolis @monad_xyz`
                 )}`}
                 target="_blank"
@@ -235,7 +235,7 @@ export default function SendTipPage() {
               }}
               className="mt-4 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition"
             >
-              Send Another Tip
+              Send Another Gift
             </button>
           </div>
         ) : (
@@ -262,7 +262,7 @@ export default function SendTipPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                  Tip Amount (Native MON)
+                  Gift Amount (Native MON)
                 </label>
                 <span className="text-[11px] text-zinc-500">Min 0.01 MON</span>
               </div>
@@ -307,8 +307,8 @@ export default function SendTipPage() {
               {loading
                 ? "Processing..."
                 : authenticated
-                ? `Send ${amount} MON Tip`
-                : "Connect Wallet to Send"}
+                ? `Send ${amount} MON Gift`
+                : "Connect Wallet to Send Gift"}
             </button>
 
             <div className="flex items-center justify-between text-[11px] text-zinc-500 pt-2 border-t border-zinc-800/60">

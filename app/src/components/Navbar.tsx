@@ -21,11 +21,11 @@ export default function Navbar() {
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-monad-purple to-monad-cyan flex items-center justify-center font-black text-white text-lg shadow-lg group-hover:scale-105 transition">
-              🏺
+              🎁
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-xl tracking-tight text-white flex items-center gap-1.5">
-                TipJar
+                Doro
                 <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-monad-purple/20 text-monad-purple border border-monad-purple/40">
                   Monad
                 </span>
@@ -42,7 +42,7 @@ export default function Navbar() {
                   : "text-zinc-400 hover:text-white"
               }`}
             >
-              Send Tip
+              Send Gift
             </Link>
             <Link
               href="/me"
@@ -52,7 +52,7 @@ export default function Navbar() {
                   : "text-zinc-400 hover:text-white"
               }`}
             >
-              Tips & Refunds
+              Gifts & Refunds
             </Link>
           </div>
         </div>

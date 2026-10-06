@@ -149,7 +149,7 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <div className="w-10 h-10 border-4 border-monad-purple/30 border-t-monad-purple rounded-full animate-spin mb-4"></div>
-        <p className="text-zinc-400 text-sm">Querying Tip #{tipId} on Monad Testnet...</p>
+        <p className="text-zinc-400 text-sm">Querying Gift #{tipId} on Monad Testnet...</p>
       </div>
     );
   }
@@ -162,11 +162,11 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
     <div className="w-full max-w-xl flex flex-col items-center">
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-monad-purple/10 border border-monad-purple/30 text-xs font-semibold text-monad-purple mb-4">
-          🏺 Claim Escrow
+          🎁 Gift Escrow
         </div>
-        <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">Tip #{tipId}</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">Gift #{tipId}</h1>
         <p className="text-zinc-400 text-sm">
-          Log in with your X (Twitter) account to receive your voucher and claim native MON.
+          Log in with your X (Twitter) account to receive your voucher and unwrap your native MON gift.
         </p>
       </div>
 
@@ -174,11 +174,11 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
         {claimSuccessTx ? (
           <div className="flex flex-col items-center text-center space-y-4 py-4">
             <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-3xl">
-              💰
+              🎁
             </div>
-            <h3 className="text-2xl font-black text-white">Claim Successful!</h3>
+            <h3 className="text-2xl font-black text-white">Gift Unwrapped Successfully!</h3>
             <p className="text-sm text-zinc-400">
-              The funds have been transferred directly to your Privy embedded wallet.
+              The MON gift has been transferred directly to your Privy embedded wallet.
             </p>
             <div className="w-full p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-left text-xs font-mono break-all text-zinc-300">
               <span className="text-zinc-500 block text-[10px] uppercase font-sans mb-1">
@@ -196,9 +196,9 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
           </div>
         ) : isNotFound ? (
           <div className="text-center py-6">
-            <p className="text-rose-400 font-bold mb-2">Tip Not Found</p>
+            <p className="text-rose-400 font-bold mb-2">Gift Not Found</p>
             <p className="text-xs text-zinc-500">
-              Tip #{tipId} does not exist on the current Monad Testnet contract.
+              Gift #{tipId} does not exist on the current Monad Testnet contract.
             </p>
           </div>
         ) : isClaimed ? (
@@ -208,7 +208,7 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
             </div>
             <p className="text-white font-bold text-lg mb-1">Already Claimed</p>
             <p className="text-xs text-zinc-400 mb-2">
-              This tip has already been claimed by:
+              This gift has already been claimed and unwrapped by:
             </p>
             <code className="text-xs font-mono text-zinc-300 bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
               {tipData.claimedBy}
@@ -216,9 +216,9 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
           </div>
         ) : isExpired ? (
           <div className="text-center py-6">
-            <p className="text-amber-400 font-bold mb-2">Tip Expired</p>
+            <p className="text-amber-400 font-bold mb-2">Gift Expired</p>
             <p className="text-xs text-zinc-400">
-              This tip has passed its 7-day claim window and is now refundable by the sender.
+              This gift has passed its 7-day claim window and is now refundable by the sender.
             </p>
           </div>
         ) : (
@@ -226,7 +226,7 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
             {/* Amount Banner */}
             <div className="p-4 rounded-xl bg-gradient-to-r from-monad-purple/20 to-indigo-900/20 border border-monad-purple/40 text-center">
               <span className="text-xs uppercase font-bold tracking-widest text-zinc-400 block mb-1">
-                Tip Value
+                Gift Value
               </span>
               <span className="text-4xl font-black text-white">
                 {formatEther(tipData.amount)} <span className="text-monad-purple text-2xl">MON</span>
@@ -320,7 +320,7 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
                 onClick={login}
                 className="w-full py-3.5 rounded-xl font-bold text-sm tracking-wide bg-gradient-to-r from-monad-purple to-indigo-600 hover:from-monad-purple/90 hover:to-indigo-500 text-white shadow-lg shadow-monad-purple/20 transition hover:scale-[1.01]"
               >
-                Login with X (Twitter) to Claim
+                Login with X (Twitter) to Claim Gift
               </button>
             ) : (
               <button
@@ -333,8 +333,8 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
                 }`}
               >
                 {claiming
-                  ? "Processing Claim..."
-                  : `Claim ${formatEther(tipData.amount)} MON`}
+                  ? "Unwrapping Gift..."
+                  : `Unwrap & Claim ${formatEther(tipData.amount)} MON`}
               </button>
             )}
           </div>
