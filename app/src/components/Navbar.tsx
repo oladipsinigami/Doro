@@ -33,10 +33,10 @@ export default function Navbar() {
             </div>
           </Link>
 
-          <div className="hidden sm:flex items-center gap-1">
+          <div className="flex items-center gap-1">
             <Link
               href="/"
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition ${
                 pathname === "/"
                   ? "bg-monad-purple/20 text-white font-semibold"
                   : "text-zinc-400 hover:text-white"
@@ -46,13 +46,13 @@ export default function Navbar() {
             </Link>
             <Link
               href="/me"
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition ${
                 pathname === "/me"
                   ? "bg-monad-purple/20 text-white font-semibold"
                   : "text-zinc-400 hover:text-white"
               }`}
             >
-              My Tips & Refunds
+              Tips & Refunds
             </Link>
           </div>
         </div>

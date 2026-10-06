@@ -22,6 +22,7 @@ export default function SendTipPage() {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [createdTip, setCreatedTip] = useState<{
     tipId?: number;
     txHash: string;
@@ -176,8 +177,8 @@ export default function SendTipPage() {
               </a>
             </div>
 
-            <div className="w-full p-4 rounded-xl bg-monad-purple/10 border border-monad-purple/30 text-left">
-              <span className="text-xs font-bold text-monad-purple block mb-1">
+            <div className="w-full p-4 rounded-xl bg-monad-purple/10 border border-monad-purple/30 text-left space-y-3">
+              <span className="text-xs font-bold text-monad-purple block">
                 Shareable Claim Link:
               </span>
               <div className="flex items-center gap-2">
@@ -189,21 +190,42 @@ export default function SendTipPage() {
                       ? `${window.location.origin}/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`
                       : `/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`
                   }
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-300 font-mono"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-300 font-mono"
                 />
                 <button
                   onClick={() => {
                     if (typeof window !== "undefined") {
                       const link = `${window.location.origin}/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`;
                       navigator.clipboard.writeText(link);
-                      alert("Claim link copied to clipboard!");
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2500);
                     }
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-monad-purple text-xs font-bold text-white hover:bg-monad-purple/80"
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                    copied
+                      ? "bg-emerald-600 text-white"
+                      : "bg-monad-purple text-white hover:bg-monad-purple/80"
+                  }`}
                 >
-                  Copy
+                  {copied ? "✓ Copied!" : "Copy"}
                 </button>
               </div>
+
+              {/* Share on X (Twitter) intent button */}
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                  `Hey @${createdTip.handle}, I just sent you ${createdTip.amount} MON on Monad Testnet! 🏺⚡\n\nClaim your native MON via @TipJar here:\n${
+                    typeof window !== "undefined"
+                      ? `${window.location.origin}/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`
+                      : `https://tipjar.monad.xyz/claim/${createdTip.tipId !== undefined ? createdTip.tipId : 0}`
+                  }\n\n#Monad #Metropolis @monad_xyz`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-black hover:bg-zinc-900 border border-zinc-700 text-white font-bold text-xs transition"
+              >
+                <span className="text-sm">𝕏</span> Share & Tweet to @{createdTip.handle}
+              </a>
             </div>
 
             <button

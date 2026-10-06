@@ -20,11 +20,12 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
   const [claimError, setClaimError] = useState<string | null>(null);
   const [claimSuccessTx, setClaimSuccessTx] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<bigint | null>(null);
+  const [copiedAddress, setCopiedAddress] = useState(false);
 
   const twitterAccount = (user?.linkedAccounts as any[])?.find(
     (a: any) => a.type === "twitter_oauth" || a.type === "twitter"
   ) as any;
-  const twitterUsername = user?.twitter?.username || twitterAccount?.username;
+  const twitterUsername = user?.twitter?.username || twitterAccount?.username || twitterAccount?.name;
   const embeddedWallet = (user?.linkedAccounts as any[])?.find(
     (a: any) => a.type === "wallet" && a.walletClientType === "privy"
   ) as any;
@@ -265,16 +266,38 @@ export default function ClaimTipPage({ params }: { params: Promise<{ id: string 
 
             {/* Gas Warning Banner */}
             {authenticated && walletBalance !== null && walletBalance < 5000000000000000n && (
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between">
-                <span>⚠️ Low gas balance for transaction.</span>
-                <a
-                  href="https://faucet.monad.xyz"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-bold underline hover:text-amber-200"
-                >
-                  Get Faucet MON &rarr;
-                </a>
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">⚠️ Gas required to claim (~0.001 MON)</span>
+                  <a
+                    href="https://faucet.monad.xyz"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-bold underline hover:text-amber-200"
+                  >
+                    Open Faucet &rarr;
+                  </a>
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Your embedded claimer wallet needs a tiny amount of MON for gas. Copy your address below to request testnet tokens from the faucet:
+                </p>
+                {embeddedWallet?.address && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="font-mono text-[11px] text-zinc-300 bg-zinc-900 px-2 py-1 rounded truncate flex-1 border border-zinc-800">
+                      {embeddedWallet.address}
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(embeddedWallet.address);
+                        setCopiedAddress(true);
+                        setTimeout(() => setCopiedAddress(false), 2000);
+                      }}
+                      className="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[10px] font-bold transition whitespace-nowrap"
+                    >
+                      {copiedAddress ? "✓ Copied" : "Copy Address"}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

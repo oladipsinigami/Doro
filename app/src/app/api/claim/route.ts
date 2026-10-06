@@ -88,10 +88,15 @@ export async function POST(req: NextRequest) {
 
     // Step 4: Extract linked X (Twitter) account
     const twitterAccount = linkedAccounts.find(
-      (acc: any) => acc.type === "twitter"
+      (acc: any) => acc.type === "twitter" || acc.type === "twitter_oauth"
     ) as any;
 
-    if (!twitterAccount || !twitterAccount.username) {
+    const twitterUsername =
+      twitterAccount?.username ||
+      twitterAccount?.name ||
+      (user as any).twitter?.username;
+
+    if (!twitterAccount || !twitterUsername) {
       return NextResponse.json(
         {
           error: "TWITTER_NOT_LINKED",
@@ -100,8 +105,6 @@ export async function POST(req: NextRequest) {
         { status: 403 }
       );
     }
-
-    const twitterUsername = twitterAccount.username;
 
     // Step 5: Extract Privy Embedded Ethereum Wallet
     const embeddedWallet = linkedAccounts.find(
