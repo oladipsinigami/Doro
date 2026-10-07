@@ -95,6 +95,12 @@ contract TipJarTest is Test {
         address indexed oldSigner,
         address indexed newSigner
     );
+    event ClaimSignerChangeQueued(
+        address indexed oldSigner,
+        address indexed newSigner,
+        uint256 effectiveAt
+    );
+    event ClaimSignerChangeCancelled(address indexed signer);
 
     function setUp() public {
         claimSigner = vm.addr(signerPrivateKey);
@@ -436,11 +442,12 @@ contract TipJarTest is Test {
         vm.expectRevert(TipJar.Unauthorized.selector);
         tipJar.setClaimSigner(newSigner);
 
-        // Owner can update
+        // Owner can queue
         vm.expectEmit(true, true, false, false);
-        emit ClaimSignerUpdated(claimSigner, newSigner);
+        emit ClaimSignerChangeQueued(claimSigner, newSigner, block.timestamp + tipJar.SIGNER_TIMELOCK());
         tipJar.setClaimSigner(newSigner);
-        assertEq(tipJar.claimSigner(), newSigner);
+        assertEq(tipJar.pendingClaimSigner(), newSigner);
+        assertEq(tipJar.claimSigner(), claimSigner, "takes effect only after timelock");
     }
 
     function test_SetClaimSigner_RotatesSignerAndInvalidatesOldVouchers() public {
@@ -450,19 +457,127 @@ contract TipJarTest is Test {
         uint256 deadline = block.timestamp + 5 minutes;
         bytes memory oldSig = _signVoucher(signerPrivateKey, tipId, bob, deadline);
 
-        // Rotate signer to rogueSigner key
+        // SD-04: rotation is now two-phase — queue, then accept after timelock.
         tipJar.setClaimSigner(rogueSigner);
+        vm.warp(block.timestamp + tipJar.SIGNER_TIMELOCK());
 
-        // Old voucher fails
+        // Rotate first, then re-sign against the new signer: warping past the
+        // timelock also expires the original 5-minute voucher.
+        tipJar.acceptClaimSigner();
+        assertEq(tipJar.claimSigner(), rogueSigner);
+
+        // Old voucher now fails
+        bytes memory freshDeadlineSig = _signVoucher(signerPrivateKey, tipId, bob, block.timestamp + 5 minutes);
         vm.prank(bob);
         vm.expectRevert(TipJar.InvalidSigner.selector);
-        tipJar.claim(tipId, bob, deadline, oldSig);
+        tipJar.claim(tipId, bob, block.timestamp + 5 minutes, freshDeadlineSig);
 
         // New voucher signed by rogueSigner succeeds
-        bytes memory newSig = _signVoucher(roguePrivateKey, tipId, bob, deadline);
+        uint256 newDeadline = block.timestamp + 5 minutes;
+        bytes memory newSig = _signVoucher(roguePrivateKey, tipId, bob, newDeadline);
         vm.prank(bob);
-        tipJar.claim(tipId, bob, deadline, newSig);
+        tipJar.claim(tipId, bob, newDeadline, newSig);
 
         assertTrue(tipJar.getTip(tipId).claimed);
+    }
+
+    // ==================== SD-04 SIGNER TIMELOCK ====================
+
+    function test_SetClaimSigner_DoesNotTakeEffectImmediately() public {
+        // The whole point: a queued rotation must not drain escrow on its own.
+        tipJar.setClaimSigner(rogueSigner);
+
+        assertEq(tipJar.claimSigner(), claimSigner, "signer must be unchanged before accept");
+        assertEq(tipJar.pendingClaimSigner(), rogueSigner);
+    }
+
+    function test_AcceptClaimSigner_RevertIf_BeforeTimelock() public {
+        tipJar.setClaimSigner(rogueSigner);
+
+        vm.warp(block.timestamp + tipJar.SIGNER_TIMELOCK() - 1 seconds);
+
+        vm.expectRevert(TipJar.TimelockNotElapsed.selector);
+        tipJar.acceptClaimSigner();
+    }
+
+    function test_AcceptClaimSigner_AppliesAfterTimelock() public {
+        tipJar.setClaimSigner(rogueSigner);
+        vm.warp(block.timestamp + tipJar.SIGNER_TIMELOCK());
+
+        tipJar.acceptClaimSigner();
+
+        assertEq(tipJar.claimSigner(), rogueSigner);
+        assertEq(tipJar.pendingClaimSigner(), address(0));
+    }
+
+    function test_AcceptClaimSigner_CanBeCalledByAnyone() public {
+        // Permissionless finalization: anyone may push a matured change through,
+        // so a rotated signer cannot be stuck waiting on the owner.
+        tipJar.setClaimSigner(rogueSigner);
+        vm.warp(block.timestamp + tipJar.SIGNER_TIMELOCK());
+
+        vm.prank(alice);
+        tipJar.acceptClaimSigner();
+
+        assertEq(tipJar.claimSigner(), rogueSigner);
+    }
+
+    function test_AcceptClaimSigner_RevertIf_NoPendingChange() public {
+        vm.expectRevert(TipJar.NoPendingSignerChange.selector);
+        tipJar.acceptClaimSigner();
+    }
+
+    function test_CancelClaimSignerChange_BlocksCompromisedRotation() public {
+        // Attack scenario: owner key is compromised and repoints the signer.
+        // Detect, cancel before the timelock elapses, funds stay safe.
+        tipJar.setClaimSigner(rogueSigner);
+
+        tipJar.cancelClaimSignerChange();
+
+        vm.warp(block.timestamp + tipJar.SIGNER_TIMELOCK());
+        vm.expectRevert(TipJar.NoPendingSignerChange.selector);
+        tipJar.acceptClaimSigner();
+
+        assertEq(tipJar.claimSigner(), claimSigner, "original signer must survive");
+    }
+
+    function test_CancelClaimSignerChange_RevertIf_NotOwner() public {
+        tipJar.setClaimSigner(rogueSigner);
+
+        vm.prank(alice);
+        vm.expectRevert(TipJar.Unauthorized.selector);
+        tipJar.cancelClaimSignerChange();
+    }
+
+    function test_SetClaimSigner_RevertIf_ZeroAddress() public {
+        vm.expectRevert(TipJar.ZeroAddress.selector);
+        tipJar.setClaimSigner(address(0));
+    }
+
+    function test_QueuedRotation_DoesNotInvalidateInFlightVouchers() public {
+        // A rotation in progress must not break vouchers already issued.
+        vm.prank(alice);
+        uint256 tipId = tipJar.createTip{value: 1 ether}(bobHandleHash);
+
+        uint256 deadline = block.timestamp + 5 minutes;
+        bytes memory sig = _signVoucher(signerPrivateKey, tipId, bob, deadline);
+
+        tipJar.setClaimSigner(rogueSigner);
+
+        // Still claimable by the old signer before the change is accepted.
+        vm.prank(bob);
+        tipJar.claim(tipId, bob, deadline, sig);
+
+        assertTrue(tipJar.getTip(tipId).claimed);
+    }
+
+    function test_QueuedRotation_ReplacesEarlierPendingChange() public {
+        address third = address(0x4444);
+
+        tipJar.setClaimSigner(rogueSigner);
+        vm.warp(block.timestamp + 10 minutes);
+        tipJar.setClaimSigner(third);
+
+        assertEq(tipJar.pendingClaimSigner(), third, "newest proposal must win");
     }
 }

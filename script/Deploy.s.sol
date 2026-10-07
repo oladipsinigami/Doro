@@ -9,9 +9,11 @@ contract DeployTipJar is Script {
         uint256 deployerPrivateKey = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
         address claimSigner = vm.envOr("CLAIM_SIGNER_ADDRESS", address(0));
 
+        // Fail closed. A hardcoded fallback signer would let anyone who can
+        // clear the environment deploy a contract whose voucher signer is not
+        // the backend, silently stranding every escrowed gift.
         if (claimSigner == address(0)) {
-            // Fallback to keystore deployer address
-            claimSigner = 0xdB99D8C6b401cF97eaE6c835345938edF5299d25;
+            revert("CLAIM_SIGNER_ADDRESS must be set to the backend signer address");
         }
 
         if (deployerPrivateKey != 0) {

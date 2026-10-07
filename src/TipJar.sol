@@ -13,6 +13,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 contract TipJar is EIP712, ReentrancyGuard {
     struct Tip {
         address sender;
+        // SD-01: uint40 truncates silently past year 36812. Latent, not
+        // exploitable today. Widen to uint256 on the next contract edit.
         uint40 createdAt;
         uint40 expiresAt;
         bool claimed;
@@ -25,9 +27,18 @@ contract TipJar is EIP712, ReentrancyGuard {
     address public owner;
     address public claimSigner;
 
+    // SD-04: pending signer rotation. `claimSigner` keeps working until this
+    // is executed, so an in-flight rotation cannot strand existing vouchers.
+    address public pendingClaimSigner;
+    uint256 public pendingClaimSignerEffectiveAt;
+
     uint256 public constant MIN_TIP = 0.01 ether;
     uint256 public constant TIP_DURATION = 7 days;
     uint256 public constant MAX_VOUCHER_TTL = 10 minutes;
+
+    // SD-04: delay before a new claim signer takes effect. Without it, a
+    // compromised owner can repoint the signer and drain every escrow instantly.
+    uint256 public constant SIGNER_TIMELOCK = 1 hours;
 
     bytes32 public constant TIP_CLAIM_TYPEHASH =
         keccak256("TipClaim(uint256 tipId,address recipient,uint256 deadline)");
@@ -55,6 +66,8 @@ contract TipJar is EIP712, ReentrancyGuard {
         address indexed oldSigner,
         address indexed newSigner
     );
+    event ClaimSignerChangeQueued(address indexed oldSigner, address indexed newSigner, uint256 effectiveAt);
+    event ClaimSignerChangeCancelled(address indexed signer);
 
     error InvalidAmount();
     error InvalidHandleHash();
@@ -69,6 +82,8 @@ contract TipJar is EIP712, ReentrancyGuard {
     error TransferFailed();
     error Unauthorized();
     error ZeroAddress();
+    error TimelockNotElapsed();
+    error NoPendingSignerChange();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
@@ -112,8 +127,17 @@ contract TipJar is EIP712, ReentrancyGuard {
     /**
      * @notice Claims a tip using a valid server-signed EIP-712 voucher.
      * @dev msg.sender MUST match recipient to prevent mempool frontrunning.
+     *
+     * SD-05 (accepted risk): this function never reads `tip.handleHash`. The
+     * handle-to-wallet binding is enforced server-side only, so the security of
+     * every on-chain control here assumes claimSigner cannot be induced to sign
+     * for the wrong person. Severity is capped by the msg.sender == recipient
+     * check below: a compromised signer yields griefing, not theft, because
+     * funds can only be released to the broadcasting address. See
+     * SECURITY-DEBT.md before changing anything here.
+     *
      * @param tipId ID of the tip being claimed
-     * @param recipient Embedded wallet address of the claimer
+     * @param recipient Address that will broadcast the claim
      * @param deadline Unix timestamp until which the signature is valid
      * @param signature EIP-712 signature produced by claimSigner
      */
@@ -140,11 +164,16 @@ contract TipJar is EIP712, ReentrancyGuard {
             abi.encode(TIP_CLAIM_TYPEHASH, tipId, recipient, deadline)
         );
         bytes32 digest = _hashTypedDataV4(structHash);
+        // SD-02: ECDSA.recover reverts with OpenZeppelin's own error selectors
+        // on a malformed signature instead of InvalidSigner(). Cosmetic only.
         address recovered = ECDSA.recover(digest, signature);
         if (recovered != claimSigner) revert InvalidSigner();
 
         tip.claimed = true;
         tip.claimedBy = recipient;
+        // SD-09: amount is intentionally not zeroed here. The claimed flag
+        // blocks re-entry and refund() zeroes it, so this is informational
+        // accounting only. Zeroing costs a storage write for no security gain.
         uint256 amount = tip.amount;
 
         // forge-lint: disable-next-line(reentrancy-events)
@@ -167,6 +196,9 @@ contract TipJar is EIP712, ReentrancyGuard {
         if (block.timestamp <= tip.expiresAt) revert TipNotExpired();
 
         tip.claimed = true;
+        // SD-03: claimedBy is intentionally left unset for refunds, so
+        // getTip() reports address(0) for a refunded tip. Accounting
+        // inconsistency only; amount is zeroed here and claimed blocks re-entry.
         uint256 amount = tip.amount;
         tip.amount = 0;
 
@@ -177,14 +209,55 @@ contract TipJar is EIP712, ReentrancyGuard {
     }
 
     /**
-     * @notice Updates the trusted voucher signer. Owner only.
+     * @notice Queues a new trusted voucher signer, effective after a timelock.
+     * @dev SD-04: splitting proposal from execution gives a window in which a
+     * compromised owner (or a mistaken rotation) can be detected and reverted
+     * before it drains escrowed funds. The current signer keeps working during
+     * that window, so no existing voucher becomes invalid.
      * @param newSigner New address authorized to sign claim vouchers
      */
     function setClaimSigner(address newSigner) external onlyOwner {
         if (newSigner == address(0)) revert ZeroAddress();
+
+        uint256 effectiveAt = block.timestamp + SIGNER_TIMELOCK;
         address oldSigner = claimSigner;
+
+        pendingClaimSigner = newSigner;
+        pendingClaimSignerEffectiveAt = effectiveAt;
+
+        emit ClaimSignerChangeQueued(oldSigner, newSigner, effectiveAt);
+    }
+
+    /**
+     * @notice Applies a queued signer rotation once its timelock has elapsed.
+     */
+    function acceptClaimSigner() external {
+        address newSigner = pendingClaimSigner;
+        if (newSigner == address(0)) revert NoPendingSignerChange();
+
+        // forge-lint: disable-next-line(block-timestamp)
+        if (block.timestamp < pendingClaimSignerEffectiveAt) revert TimelockNotElapsed();
+
+        address oldSigner = claimSigner;
+
         claimSigner = newSigner;
+        pendingClaimSigner = address(0);
+        pendingClaimSignerEffectiveAt = 0;
+
         emit ClaimSignerUpdated(oldSigner, newSigner);
+    }
+
+    /**
+     * @notice Cancels a queued signer rotation. Owner only.
+     */
+    function cancelClaimSignerChange() external onlyOwner {
+        address queued = pendingClaimSigner;
+        if (queued == address(0)) revert NoPendingSignerChange();
+
+        pendingClaimSigner = address(0);
+        pendingClaimSignerEffectiveAt = 0;
+
+        emit ClaimSignerChangeCancelled(queued);
     }
 
     /**

@@ -86,7 +86,7 @@ tipjar/
 ├── src/
 │   └── TipJar.sol               # Core escrow smart contract with EIP-712 & ReentrancyGuard
 ├── test/
-│   └── TipJar.t.sol             # 20 exhaustive unit tests covering all security vectors
+│   └── TipJar.t.sol             # 30 unit tests covering the escrow and signer timelock
 ├── script/
 │   └── Deploy.s.sol             # Foundry deployment script for Monad Testnet
 ├── app/
@@ -114,7 +114,8 @@ tipjar/
 Foundry v1.8.0+ is required with native `network = "monad"` support:
 
 ```bash
-# Run all 20 tests (100% green)
+# Run all 30 tests
+
 forge test -vv
 ```
 
@@ -141,13 +142,13 @@ npm run dev
 ## 5. End-to-End Demo Runbook
 
 1. **Step 1 — Fund Sender Wallet**: Ensure your sender wallet has at least 0.05 MON from `https://faucet.monad.xyz`.
-2. **Step 2 — Lock Gift**: Navigate to `http://localhost:3000/`, enter `@metropolis_tester`, enter `0.02 MON`, and click **Send Gift**. Confirm transaction on Monad Testnet.
-3. **Step 3 — Successful Unwrap & Claim**:
-   - Open an Incognito window and visit the shareable gift link (`http://localhost:3000/claim/0`).
-   - Click **Login with X** and authenticate as `@metropolis_tester`.
+2. **Step 2 — Lock Gift**: Navigate to `http://localhost:3000/`, enter `@doro_tester`, enter `0.02 MON`, and click **Send 0.02 MON**. Confirm the transaction on Monad Testnet. The claim link includes the courier and the note. `@metropolis_tester` is 18 characters, and X handles stop at 15, so that old demo handle can never be hashed.
+3. **Step 3 — Claim**:
+   - Open an Incognito window and visit the shareable gift link.
+   - Click **Sign in with X** and authenticate as `@doro_tester`.
    - Privy generates an embedded wallet.
-   - Click **Unwrap & Claim 0.02 MON** to sign and broadcast the claim on-chain.
+   - Click **Claim 0.02 MON**. The page waits for the receipt before it says the gift is claimed.
 4. **Step 4 — Negative Test (Unauthorized Claim Rejection)**:
    - Open a second Incognito window and visit `http://localhost:3000/claim/0`.
    - Log in with a different X account (`@other_user`).
-   - The UI immediately displays: `Error 403: Authenticated X account does not match gift recipient`. The claim is rejected.
+   - Click **Claim**. The page shows `Authenticated X account @other_user does not match the tip recipient.` The claim is rejected.

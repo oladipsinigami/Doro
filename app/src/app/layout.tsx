@@ -1,12 +1,26 @@
 import type { Metadata } from "next";
+import { Fraunces, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import Navbar from "@/components/Navbar";
+import VoidBackground from "@/components/VoidBackground";
+
+const sans = Schibsted_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const serif = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Doro — Native MON Gifting for X on Monad Testnet",
+  title: "Doro — Send MON to any X handle",
   description:
-    "Gift native MON to any X (Twitter) handle. Claimable and unwrappable on Monad Testnet via Privy embedded wallets and EIP-712 vouchers.",
+    "Gift native MON to any X handle on Monad Testnet. They sign in with X to claim it. You can take it back after 7 days.",
 };
 
 export default function RootLayout({
@@ -15,16 +29,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased flex flex-col min-h-screen">
+    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+      <body className="antialiased min-h-screen flex flex-col bg-[#07060b] text-[#F6F0E2] selection:bg-[#6E3EAE]/40">
+        <VoidBackground />
         <Providers>
           <Navbar />
-          <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 flex flex-col items-center">
+          <div className="flex-1 w-full flex flex-col">
             {children}
-          </main>
-          <footer className="w-full border-t border-monad-border/40 py-6 text-center text-xs text-zinc-500">
-            Doro (δῶρο) • Built for Monad Metropolis Hackathon 2026 • Monad Testnet (Chain ID 10143)
-          </footer>
+          </div>
         </Providers>
       </body>
     </html>

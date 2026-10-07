@@ -3,6 +3,12 @@ import { monadTestnet } from "./chain";
 export const TIPJAR_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
   "0xa7a9ACAc332C398B61f7459215Fd4f5522686b88") as `0x${string}`;
 
+/**
+ * Block that deployed 0xa7a9…6b88 on Monad Testnet (0x416ae6d).
+ * Gift history queries start here instead of at genesis.
+ */
+export const TIPJAR_DEPLOY_BLOCK = 68595309n;
+
 export const TIPJAR_ABI = [
   {
     type: "constructor",

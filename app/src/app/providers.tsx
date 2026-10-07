@@ -3,34 +3,39 @@
 import React from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { monadTestnet } from "@/lib/chain";
+import { WalletProvider } from "@/context/WalletContext";
+import ConnectWalletModal from "@/components/ConnectWalletModal";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  // Privy requires an app ID of exactly 25 characters
+  const rawAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID?.trim();
   const appId =
-    process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.NEXT_PUBLIC_PRIVY_APP_ID.length === 25
-      ? process.env.NEXT_PUBLIC_PRIVY_APP_ID
+    rawAppId && rawAppId.length === 25
+      ? rawAppId
       : "cl00000000000000000000000";
 
   return (
     <PrivyProvider
       appId={appId}
       config={{
-        loginMethods: ["twitter", "wallet"],
+        loginMethods: ["twitter"],
         defaultChain: monadTestnet,
         supportedChains: [monadTestnet],
         embeddedWallets: {
           ethereum: {
-            createOnLogin: "users-without-wallets",
+            createOnLogin: "off",
           },
         },
         appearance: {
           theme: "dark",
-          accentColor: "#836EF9",
+          accentColor: "#6E56CF",
           logo: "https://monad.xyz/favicon.ico",
         },
       }}
     >
-      {children}
+      <WalletProvider>
+        {children}
+        <ConnectWalletModal />
+      </WalletProvider>
     </PrivyProvider>
   );
 }

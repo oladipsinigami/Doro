@@ -13,6 +13,18 @@ node_modules/
 .next/
 dist/
 build/
+*.tsbuildinfo
+
+# Local dev artifacts
+dev-server.log
+*.log
+
+# AI image-generation working files. The finished portraits the app serves
+# live in app/public/; these are the unedited source renders.
+Character/
+
+# Stray file that landed in the repo root, unrelated to the project.
+role-persona-prompting.skill
 
 # IDE / OS
 .DS_Store
