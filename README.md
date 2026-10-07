@@ -2,7 +2,14 @@
 
 **Doro** (*Greek for "gift"*) is a trust-minimized social gifting protocol for Monad Testnet that lets anyone gift native MON to any X (Twitter) handle. 
 
-Recipients authenticate through [Privy](https://privy.io) with their X account, derive an embedded Ethereum wallet, receive an EIP-712 server-signed voucher proving their handle ownership, and unwrap their gift on-chain. If left unclaimed past 7 days, the sender can execute a full refund.
+Recipients authenticate through [Privy](https://privy.io) with their X account. That
+login proves handle ownership and nothing else — no wallet is provisioned. The
+recipient connects their own wallet (MetaMask, Rabby, anything EIP-1193), which
+both receives the gift and pays the gas, then redeems an EIP-712 server-signed
+voucher on-chain. If left unclaimed past 7 days, the sender can execute a full
+refund.
+
+**Live:** https://doro-seven.vercel.app
 
 Built for the **Monad Metropolis Hackathon (October 2026)**.
 

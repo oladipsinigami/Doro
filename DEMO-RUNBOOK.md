@@ -1,7 +1,13 @@
 # Demo Runbook — Doro
 
-Verified against the live app and Monad Testnet on the evening of the hackathon
-demo. Every status below was checked with a command, not assumed.
+**Live:** https://doro-seven.vercel.app
+
+Verified against the live app and Monad Testnet. Every status below was checked
+with a command, not assumed.
+
+**Demo from localhost.** The deployed site is the judge-facing URL, but the
+voucher rate limiter is an in-memory Map and serverless instances do not share
+memory, so the cooldown is weaker in production. See SD-06.
 
 ---
 
