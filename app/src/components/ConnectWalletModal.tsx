@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useWallet } from "@/context/WalletContext";
 
 export default function ConnectWalletModal() {
-  const { isModalOpen, closeConnectModal, connectInjected, isConnecting, error } = useWallet();
+  const { isModalOpen, closeConnectModal, connectInjected, connectPrivy, isConnecting, error } =
+    useWallet();
   const [hasInjected, setHasInjected] = useState(false);
 
   useEffect(() => {
@@ -59,7 +60,24 @@ export default function ConnectWalletModal() {
 
         {/* Wallet Options */}
         <div className="mt-5 space-y-3">
-          {/* Option 1: Browser Wallet (MetaMask / Rabby / OKX / Phantom) */}
+          {/*
+            Primary path. Privy renders the full picker, so the user picks by
+            name instead of landing in whatever the browser injected first.
+            WalletConnect lets a phone wallet work with no extension at all.
+          */}
+          <button
+            onClick={connectPrivy}
+            disabled={isConnecting}
+            className="w-full p-4 rounded-xl bg-white border border-doro-seal hover:border-doro-seal text-left"
+          >
+            <div className="font-semibold text-sm">Choose a wallet</div>
+            <p className="text-sm text-doro-muted mt-1">
+              Pick from MetaMask, Rabby, Coinbase, Phantom, or more. Use
+              WalletConnect to connect from your phone.
+            </p>
+          </button>
+
+          {/* Fallback: connect directly to whatever extension is injected. */}
           <button
             onClick={connectInjected}
             disabled={isConnecting}
@@ -68,13 +86,43 @@ export default function ConnectWalletModal() {
             <div className="font-semibold text-sm">
               Browser wallet
               <span className="ml-2 text-xs font-normal text-doro-muted">
-                {hasInjected ? "Detected" : "MetaMask, Rabby, or similar"}
+                {hasInjected ? "Detected" : "Not detected"}
               </span>
             </div>
             <p className="text-sm text-doro-muted mt-1">
-              MetaMask, Rabby, or any wallet installed in this browser.
+              {hasInjected
+                ? "Connect to the wallet extension installed in this browser."
+                : "No extension found in this browser. Use the option above instead."}
             </p>
           </button>
+
+          {/* Nothing installed and no phone handy: link out. */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+            <a
+              href="https://rabby.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-doro-seal underline"
+            >
+              Get Rabby
+            </a>
+            <a
+              href="https://walletconnect.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-doro-seal underline"
+            >
+              WalletConnect
+            </a>
+            <a
+              href="https://phantom.app/download"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-doro-seal underline"
+            >
+              Get Phantom
+            </a>
+          </div>
         </div>
 
         {/* Footer Info & Faucet Link */}

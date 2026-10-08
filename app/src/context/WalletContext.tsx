@@ -9,6 +9,7 @@ import {
   http,
   type PublicClient,
 } from "viem";
+import { useConnectWallet, useWallets } from "@privy-io/react-auth";
 import { monadTestnet, monadTestnetParams } from "@/lib/chain";
 
 const createDoroWalletClient = (ethereum: Parameters<typeof custom>[0]) =>
@@ -20,6 +21,13 @@ const createDoroWalletClient = (ethereum: Parameters<typeof custom>[0]) =>
  * call for lacking a `chain` property.
  */
 type DoroWalletClient = ReturnType<typeof createDoroWalletClient>;
+
+/**
+ * Privy hands back an EIP-1193 provider typed more loosely than viem's
+ * transport accepts, so we hold it as the exact type `custom()` takes and cast
+ * once at the boundary rather than loosening types everywhere downstream.
+ */
+type PrivyProvider = Parameters<typeof custom>[0];
 
 export interface WalletContextType {
   isConnected: boolean;
@@ -34,6 +42,7 @@ export interface WalletContextType {
   openConnectModal: () => void;
   closeConnectModal: () => void;
   connectInjected: () => Promise<void>;
+  connectPrivy: () => void;
   switchNetwork: () => Promise<void>;
   disconnect: () => void;
   getWalletClient: () => Promise<DoroWalletClient | null>;
@@ -56,6 +65,17 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  /**
+   * Privy connectors (WalletConnect, Coinbase SDK, browser extensions chosen by
+   * name) do not all expose themselves on `window.ethereum`. Keeping the active
+   * provider here means `getWalletClient` works for all of them, not just the
+   * one the browser happened to inject first.
+   */
+  const [privyProvider, setPrivyProvider] = useState<PrivyProvider | null>(null);
+
+  const { connectWallet } = useConnectWallet();
+  const { wallets } = useWallets();
 
   const isConnected = !!address;
   const isCorrectNetwork = chainId === monadTestnet.id;
@@ -112,13 +132,21 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Connect Injected Browser Wallet (MetaMask, Rabby, OKX, Phantom, etc.)
+  const connectPrivy = () => {
+    setError(null);
+    closeConnectModal();
+    // Opens the Privy picker, which lists named wallets plus WalletConnect
+    // for mobile. Nothing is routed to MetaMask unless it is chosen.
+    connectWallet();
+  };
+
   const connectInjected = async () => {
     setError(null);
     setIsConnecting(true);
 
     if (typeof window === "undefined" || !(window as any).ethereum) {
       setIsConnecting(false);
-      setError("No EVM wallet detected. Please install MetaMask, Rabby, or OKX Wallet.");
+      setError("No EVM wallet detected. Install a wallet extension, or use WalletConnect to connect from your phone.");
       return;
     }
 
@@ -175,8 +203,55 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setBalance("0.00");
     setChainId(null);
     setWalletType(null);
+    setPrivyProvider(null);
     localStorage.removeItem("doro_wallet_type");
   };
+
+  /**
+   * Mirror the Privy-connected wallet into this context. Privy owns the session,
+   * so we read its address and cache the EIP-1193 provider for later signing
+   * rather than prompting for accounts a second time.
+   */
+  useEffect(() => {
+    const active = wallets[wallets.length - 1];
+    if (!active) {
+      setPrivyProvider(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const provider = (await active.getEthereumProvider()) as unknown as PrivyProvider;
+        if (cancelled || !provider) return;
+
+        setPrivyProvider(provider);
+        setWalletType("privy");
+        setAddress(active.address as `0x${string}`);
+        setIsModalOpen(false);
+        setError(null);
+
+        const hex = (await provider.request({ method: "eth_chainId" })) as `0x${string}`;
+        setChainId(parseInt(hex, 16));
+
+        try {
+          const bal = await publicClient.getBalance({
+            address: active.address as `0x${string}`,
+          });
+          setBalance(parseFloat(formatEther(bal)).toFixed(4));
+        } catch {
+          /* balance is cosmetic; ignore */
+        }
+      } catch (err) {
+        console.warn("Could not read Privy wallet provider:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [wallets]);
 
   // Auto-connect if previously connected
   useEffect(() => {
@@ -225,6 +300,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   // Get Viem Wallet Client
   const getWalletClient = async (): Promise<DoroWalletClient | null> => {
+    // Prefer the Privy connector. WalletConnect and Coinbase SDK sessions are
+    // not reachable through window.ethereum, so checking the browser first
+    // would sign with the wrong wallet.
+    if (privyProvider) {
+      return createDoroWalletClient(privyProvider);
+    }
     if (typeof window === "undefined" || !(window as any).ethereum) {
       return null;
     }
@@ -246,6 +327,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         openConnectModal,
         closeConnectModal,
         connectInjected,
+        connectPrivy,
         switchNetwork,
         disconnect,
         getWalletClient,
@@ -271,6 +353,7 @@ const defaultWalletState: WalletContextType = {
   openConnectModal: () => {},
   closeConnectModal: () => {},
   connectInjected: async () => {},
+  connectPrivy: () => {},
   switchNetwork: async () => {},
   disconnect: () => {},
   getWalletClient: async () => null,
