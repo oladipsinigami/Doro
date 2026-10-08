@@ -62,7 +62,8 @@ describe("createRateLimiter", () => {
     const blocked = limiter.check("alice", clock.now());
 
     assert.equal(blocked.allowed, false);
-    assert.ok(blocked.retryAfterSeconds > 0, "blocked result should carry a retry hint");
+    assert.ok(blocked.retryAfterSeconds !== undefined, "blocked result should carry a retry hint");
+    assert.ok(blocked.retryAfterSeconds! > 0, "retry hint should be positive");
     assert.ok(
       blocked.retryAfterSeconds! <= 60,
       "retry hint should not exceed the window"

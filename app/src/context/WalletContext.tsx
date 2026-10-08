@@ -11,6 +11,7 @@ import {
 } from "viem";
 import { useConnectWallet, useWallets } from "@privy-io/react-auth";
 import { monadTestnet, monadTestnetParams } from "@/lib/chain";
+import { pickActiveWallet } from "@/lib/active-wallet";
 
 const createDoroWalletClient = (ethereum: Parameters<typeof custom>[0]) =>
   createWalletClient({ chain: monadTestnet, transport: custom(ethereum) });
@@ -28,6 +29,15 @@ type DoroWalletClient = ReturnType<typeof createDoroWalletClient>;
  * once at the boundary rather than loosening types everywhere downstream.
  */
 type PrivyProvider = Parameters<typeof custom>[0];
+
+/** The subset of a Privy `ConnectedWallet` this context actually calls. */
+type PrivyWallet = {
+  address: string;
+  walletClientType: string;
+  connectorType?: string;
+  connectedAt?: number;
+  getEthereumProvider: () => Promise<unknown>;
+};
 
 export interface WalletContextType {
   isConnected: boolean;
@@ -213,9 +223,17 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
    * rather than prompting for accounts a second time.
    */
   useEffect(() => {
-    const active = wallets[wallets.length - 1];
+    // Privy returns every linked wallet in an unspecified order, so select
+    // deliberately. Taking the last element handed back the embedded Privy key
+    // and claimed gifts into a wallet the recipient never chose.
+    // The selector is typed on the fields it reads; the live objects also carry
+    // Privy's connector methods, so the chosen entry keeps its own prototype.
+    const active = pickActiveWallet(wallets as any) as PrivyWallet | null;
     if (!active) {
       setPrivyProvider(null);
+      setAddress(null);
+      setChainId(null);
+      setWalletType(null);
       return;
     }
 
@@ -256,6 +274,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   // Auto-connect if previously connected
   useEffect(() => {
     if (typeof window === "undefined" || !(window as any).ethereum) return;
+
+    /**
+     * Restore a previous injected connection, but never over a Privy one.
+     * Otherwise this silent restore overwrites the wallet the user just chose
+     * on page load, which is the same class of bug as picking the wrong entry
+     * out of the wallets array.
+     */
     const savedType = localStorage.getItem("doro_wallet_type");
     if (savedType === "injected") {
       const ethereum = (window as any).ethereum;
@@ -263,8 +288,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         .request({ method: "eth_accounts" })
         .then((accounts: string[]) => {
           if (accounts && accounts.length > 0) {
-            setAddress(accounts[0] as `0x${string}`);
-            setWalletType("injected");
+            setAddress((current) => {
+              if (current) return current;
+              return accounts[0] as `0x${string}`;
+            });
+            setWalletType((current) => current ?? "injected");
             ethereum
               .request({ method: "eth_chainId" })
               .then((hex: string) => setChainId(parseInt(hex, 16)))
@@ -278,9 +306,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const handleAccountsChanged = (accounts: string[]) => {
       if (accounts.length === 0) {
         disconnect();
-      } else {
-        setAddress(accounts[0] as `0x${string}`);
+        return;
       }
+      // A Privy session owns its own address. An injected extension firing this
+      // event must not repoint the app at a different wallet.
+      setAddress((current) => current ?? (accounts[0] as `0x${string}`));
     };
 
     const handleChainChanged = (hex: string) => {

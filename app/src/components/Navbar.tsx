@@ -32,7 +32,23 @@ export default function Navbar() {
   return (
     <nav className="w-full border-b border-white/10 bg-black/35 backdrop-blur-md sticky top-0 z-40">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
+          {/*
+            A real link, not router.back(). Someone who opens a claim link from
+            a DM has no previous in-app page to go back to, and a dead back
+            button is worse than none.
+          */}
+          {pathname !== "/" && (
+            <Link
+              href="/"
+              aria-label="Back to send"
+              className="flex items-center gap-1 px-2 py-1.5 -ml-2 rounded-lg text-[#E7DCC8]/70 hover:text-[#F6F0E2] transition"
+            >
+              <span aria-hidden="true">←</span>
+              <span className="text-sm">Back</span>
+            </Link>
+          )}
+
           <Link href="/" className="flex items-center gap-2">
             <span className="font-serif text-xl text-[#F6E7B4]">Doro</span>
             <span className="text-xs text-[#E8D7A2]/70 hidden sm:inline">δῶρο</span>
@@ -44,6 +60,9 @@ export default function Navbar() {
             </Link>
             <Link href="/me" className={linkClass(pathname === "/me")}>
               Sent
+            </Link>
+            <Link href="/gifts" className={linkClass(pathname === "/gifts")}>
+              Gifts
             </Link>
           </div>
         </div>
